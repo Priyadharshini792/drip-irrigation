@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Drip Irrigation Monitor</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f2f7f2; margin: 0; padding: 24px; color: #1f2d1f; }
+    h1 { margin-top: 0; }
+    #status { margin-bottom: 16px; font-size: 14px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); }
+    .label { font-size: 14px; color: #556655; }
+    .value { font-size: 36px; font-weight: bold; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Drip Irrigation Monitor</h1>
+  <div id="status">Connecting...</div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="label">Temperature</div>
+      <div class="value"><span id="temperature">--</span> &deg;C</div>
+    </div>
+    <div class="card">
+      <div class="label">Humidity</div>
+      <div class="value"><span id="humidity">--</span> %</div>
+    </div>
+    <div class="card">
+      <div class="label">Water flow</div>
+      <div class="value"><span id="flow">--</span> L/min</div>
+    </div>
+    <div class="card">
+      <div class="label">Soil moisture</div>
+      <div class="value"><span id="moisture">--</span> %</div>
+    </div>
+  </div>
+
+  <script>
+    async function refresh() {
+      const status = document.getElementById("status");
+      try {
+        const response = await fetch("/zones");
+        const zones = await response.json();
+        const zone = zones["1"];
+
+        if (!zone) {
+          status.textContent = "Connected. Waiting for the first reading...";
+          return;
+        }
+
+        document.getElementById("temperature").textContent = zone.temperature;
+        document.getElementById("humidity").textContent = zone.humidity;
+        document.getElementById("flow").textContent = zone.flow;
+        document.getElementById("moisture").textContent = zone.moisture;
+        status.textContent = "Zone 1 - last updated " + zone.received_at;
+      } catch (error) {
+        status.textContent = "Cannot reach the server. Is it running?";
+      }
+    }
+
+    refresh();
+    setInterval(refresh, 2000);
+  </script>
+</body>
+</html>
