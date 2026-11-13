@@ -7,7 +7,11 @@
   <style>
     body { font-family: Arial, sans-serif; background: #f2f7f2; margin: 0; padding: 24px; color: #1f2d1f; }
     h1 { margin-top: 0; }
-    #status { margin-bottom: 16px; font-size: 14px; }
+    #status { margin-bottom: 12px; font-size: 14px; }
+    .banner { padding: 16px 20px; border-radius: 12px; font-size: 18px; font-weight: bold; margin-bottom: 16px; }
+    .waiting { background: #e6e6e6; color: #444444; }
+    .ok { background: #d4f4dd; color: #14532d; }
+    .fault { background: #fddede; color: #7f1d1d; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
     .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); }
     .label { font-size: 14px; color: #556655; }
@@ -17,6 +21,7 @@
 <body>
   <h1>Drip Irrigation Monitor</h1>
   <div id="status">Connecting...</div>
+  <div id="banner" class="banner waiting">Waiting for data...</div>
 
   <div class="grid">
     <div class="card">
@@ -38,6 +43,12 @@
   </div>
 
   <script>
+    function showBanner(text, kind) {
+      const banner = document.getElementById("banner");
+      banner.textContent = text;
+      banner.className = "banner " + kind;
+    }
+
     async function refresh() {
       const status = document.getElementById("status");
       try {
@@ -47,6 +58,7 @@
 
         if (!zone) {
           status.textContent = "Connected. Waiting for the first reading...";
+          showBanner("Waiting for data...", "waiting");
           return;
         }
 
@@ -55,8 +67,17 @@
         document.getElementById("flow").textContent = zone.flow;
         document.getElementById("moisture").textContent = zone.moisture;
         status.textContent = "Zone 1 - last updated " + zone.received_at;
+
+        if (zone.verdict) {
+          if (zone.verdict.status === "OK") {
+            showBanner("OK - " + zone.verdict.message, "ok");
+          } else {
+            showBanner("FAULT - " + zone.verdict.message, "fault");
+          }
+        }
       } catch (error) {
         status.textContent = "Cannot reach the server. Is it running?";
+        showBanner("No data - server unreachable", "waiting");
       }
     }
 

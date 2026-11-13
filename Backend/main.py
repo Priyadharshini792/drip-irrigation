@@ -5,10 +5,12 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
+from detector import classify
+
 app = FastAPI()
 
-# Path to the frontend folder, worked out from where this file lives.
-FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
+# Path to the Frontend folder, worked out from where this file lives.
+FRONTEND_DIR = Path(__file__).resolve().parent.parent / "Frontend"
 
 # Temporary memory: the latest reading for each zone.
 # It disappears when the server restarts. We'll add a real database later.
@@ -38,6 +40,7 @@ def dashboard():
 def receive_reading(reading: Reading):
     data = reading.model_dump()
     data["received_at"] = datetime.now().isoformat(timespec="seconds")
+    data["verdict"] = classify(reading.flow)
     latest_readings[reading.zone] = data
     return {"status": "received", "reading": data}
 
