@@ -12,6 +12,7 @@
     .waiting { background: #e6e6e6; color: #444444; }
     .ok { background: #d4f4dd; color: #14532d; }
     .fault { background: #fddede; color: #7f1d1d; }
+    .info { background: #e3edf9; color: #1e3a5f; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
     .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); }
     .label { font-size: 14px; color: #556655; }
@@ -25,20 +26,20 @@
 
   <div class="grid">
     <div class="card">
-      <div class="label">Temperature</div>
+      <div class="label">Temperature (sensor)</div>
       <div class="value"><span id="temperature">--</span> &deg;C</div>
     </div>
     <div class="card">
-      <div class="label">Humidity</div>
+      <div class="label">Humidity (sensor)</div>
       <div class="value"><span id="humidity">--</span> %</div>
     </div>
     <div class="card">
-      <div class="label">Water flow</div>
-      <div class="value"><span id="flow">--</span> L/min</div>
+      <div class="label">Soil moisture (sensor)</div>
+      <div class="value"><span id="moisture">--</span> %</div>
     </div>
     <div class="card">
-      <div class="label">Soil moisture</div>
-      <div class="value"><span id="moisture">--</span> %</div>
+      <div class="label">Water flow (simulated)</div>
+      <div class="value"><span id="flow">--</span> L/min</div>
     </div>
   </div>
 
@@ -47,6 +48,10 @@
       const banner = document.getElementById("banner");
       banner.textContent = text;
       banner.className = "banner " + kind;
+    }
+
+    function show(id, value) {
+      document.getElementById(id).textContent = value === null ? "--" : value;
     }
 
     async function refresh() {
@@ -62,18 +67,20 @@
           return;
         }
 
-        document.getElementById("temperature").textContent = zone.temperature;
-        document.getElementById("humidity").textContent = zone.humidity;
-        document.getElementById("flow").textContent = zone.flow;
-        document.getElementById("moisture").textContent = zone.moisture;
-        status.textContent = "Zone 1 - last updated " + zone.received_at;
+        show("temperature", zone.temperature);
+        show("humidity", zone.humidity);
+        show("moisture", zone.moisture);
+        show("flow", zone.flow);
 
-        if (zone.verdict) {
-          if (zone.verdict.status === "OK") {
-            showBanner("OK - " + zone.verdict.message, "ok");
-          } else {
-            showBanner("FAULT - " + zone.verdict.message, "fault");
-          }
+        status.textContent = "Sensors updated: " + (zone.sensors_updated_at || "never") +
+          "  |  Flow (simulated) updated: " + (zone.flow_updated_at || "never");
+
+        if (zone.verdict.status === "OK") {
+          showBanner("OK - " + zone.verdict.message, "ok");
+        } else if (zone.verdict.status === "NO_SENSOR") {
+          showBanner(zone.verdict.message, "info");
+        } else {
+          showBanner("FAULT - " + zone.verdict.message, "fault");
         }
       } catch (error) {
         status.textContent = "Cannot reach the server. Is it running?";
